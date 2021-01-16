@@ -1,22 +1,28 @@
 # -*- coding: utf-8 -*-
-import idcardocr
-import findidcard
-import json
-from http.server import BaseHTTPRequestHandler, HTTPServer
-import socketserver
-import cv2, time
-import uuid
 import cgi
+import json
+import os
+import socketserver
+import uuid
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
+import cv2
+import time
+
+import findidcard
+import idcardocr
 
 
 def process(img_name):
     try:
         idfind = findidcard.findidcard()
         idcard_img = idfind.find(img_name)
-        result_dict = idcardocr.idcardocr(idcard_img)
-        result_dict['error'] = 0
+        result_dict = dict()
+        result_dict["data"] = idcardocr.idcardocr(idcard_img)
+        result_dict['errCode'] = 0
     except Exception as e:
-        result_dict = {'error': 1}
+        result_dict = {'errCode': 1}
+        result_dict = {'message': "%s" % e}
         print(e)
     return result_dict
 
@@ -42,6 +48,7 @@ class S(BaseHTTPRequestHandler):
     def do_POST(self):
         # content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
         # post_data = self.rfile.read(content_length) # <--- Gets the data itself
+        t1 = round(time.time() * 1000)
         ctype, pdict = cgi.parse_header(self.headers['content-type'])
         print(pdict)
         pdict['boundary'] = bytes(pdict['boundary'], "utf-8")
@@ -53,6 +60,8 @@ class S(BaseHTTPRequestHandler):
         fo.write(multipart_data.get('pic')[0])
         fo.close()
         result = process("tmp/%s.jpg" % filename)
+        t2 = round(time.time() * 1000)
+        result['costTime'] = (t2 - t1)
         # print result
         self._set_headers()
         self.send_header("Content-Length", str(len(json.dumps(result).encode('utf-8'))))
@@ -61,10 +70,12 @@ class S(BaseHTTPRequestHandler):
 
 
 def http_server(server_class=ForkingServer, handler_class=S, port=8588):
+    if not os.path.exists("tmp"):
+        os.mkdir("tmp")
     server_address = ('', port)
     httpd = server_class(server_address, handler_class)
     cv2.ocl.setUseOpenCL(False)
-    print('Starting httpd...')
+    print('Starting httpd %d...' % port)
     print(u"是否启用OpenCL：%s" % cv2.ocl.useOpenCL())
     httpd.serve_forever()
 
