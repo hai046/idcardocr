@@ -435,8 +435,8 @@ def get_sex(img):
     red = img_resize(red, 150)
     # cv2.imwrite('sex.png', red)
     # img = Image.fromarray(cv2.UMat.get(red).astype('uint8'))
-    return get_result_fix_length(red, 1, 'sex', '--psm 10').replace("\n", "").replace("\f", "")
-    # return get_result_fix_length(red, 1, 'chi_sim', '--psm 10')
+    # return get_result_fix_length(red, 1, 'sex', '--psm 10').replace("\n", "").replace("\f", "")
+    return get_result_fix_length(red, 1, 'chi_sim', '--psm 10').replace("\n", "").replace("\f", "")
     # return pytesseract.image_to_string(img, lang='sex', config='-psm 10').replace(" ","")
 
 
@@ -449,7 +449,8 @@ def get_nation(img):
     red = img_resize(red, 150)
     # cv2.imwrite('nation.png', red)
     # img = Image.fromarray(cv2.UMat.get(red).astype('uint8'))
-    return get_result_fix_length(red, 1, 'nation', '--psm 10').replace("\n", "").replace("\f", "")
+    # return get_result_fix_length(red, 1, 'nation', '--psm 10').replace("\n", "").replace("\f", "")
+    return get_result_fix_length(red, 1, 'chi_sim', '--psm 10').replace("\n", "").replace("\f", "")
     # return get_result_fix_length(red, 1, 'chi_sim', '--psm 10')
     # return pytesseract.image_to_string(img, lang='nation', config='-psm 13').replace(" ","")
 
