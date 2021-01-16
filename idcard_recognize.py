@@ -21,8 +21,7 @@ def process(img_name):
         result_dict["data"] = idcardocr.idcardocr(idcard_img)
         result_dict['errCode'] = 0
     except Exception as e:
-        result_dict = {'errCode': 1}
-        result_dict = {'message': "%s" % e}
+        result_dict = {'errCode': 1, 'message': "%s" % e}
         print(e)
     return result_dict
 
@@ -59,6 +58,7 @@ class S(BaseHTTPRequestHandler):
         # print(multipart_data.get('pic')[0])
         fo.write(multipart_data.get('pic')[0])
         fo.close()
+        path = "tmp/%s.jpg" % filename
         result = process("tmp/%s.jpg" % filename)
         t2 = round(time.time() * 1000)
         result['costTime'] = (t2 - t1)
@@ -67,6 +67,7 @@ class S(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(json.dumps(result).encode('utf-8'))))
         self.end_headers()
         self.wfile.write(json.dumps(result).encode('utf-8'))
+        os.remove(path)
 
 
 def http_server(server_class=ForkingServer, handler_class=S, port=8588):
@@ -74,7 +75,7 @@ def http_server(server_class=ForkingServer, handler_class=S, port=8588):
         os.mkdir("tmp")
     server_address = ('', port)
     httpd = server_class(server_address, handler_class)
-    cv2.ocl.setUseOpenCL(True)
+    cv2.ocl.setUseOpenCL(False)
     print('Starting httpd %d...' % port)
     print(u"是否启用OpenCL：%s" % cv2.ocl.useOpenCL())
     httpd.serve_forever()

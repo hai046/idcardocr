@@ -6,9 +6,11 @@ import numpy as np
 import pytesseract
 from PIL import Image
 
-# pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files (x86)\\Tesseract-OCR\\tesseract.exe'
-x = 1280.00 / 3840.00
-pixel_x = int(x * 3840)
+rate = 1.0
+w = 1280.00 / rate
+h = 3840.00 / rate
+x = w / h
+pixel_x = int(x * h)
 print(x, pixel_x)
 
 
