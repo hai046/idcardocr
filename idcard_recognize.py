@@ -19,9 +19,9 @@ def process(img_name):
         idcard_img = idfind.find(img_name)
         result_dict = dict()
         result_dict["data"] = idcardocr.idcardocr(idcard_img)
-        result_dict['errCode'] = 0
+        result_dict['code'] = 0
     except Exception as e:
-        result_dict = {'errCode': 1, 'message': "%s" % e}
+        result_dict = {'code': 1, 'message': "%s" % e}
         print(e)
     return result_dict
 
