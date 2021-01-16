@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
+import time
 
 import cv2
 import numpy as np
@@ -7,11 +8,15 @@ import pytesseract
 from PIL import Image
 
 rate = 1.0
-w = 1280.00 / rate
-h = 3840.00 / rate
-x = w / h
-pixel_x = int(x * h)
+global_height = 1280.00 / rate
+global_width = 3840.00 / rate
+x = global_height / global_width
+pixel_x = int(x * global_width)
 print(x, pixel_x)
+
+mask_color = (255, 255, 255)
+
+debug = False
 
 
 # mode0:识别姓名，出生日期，身份证号； mode1：识别所有信息
@@ -19,37 +24,96 @@ def idcardocr(imgname, mode=1):
     print(u'进入身份证光学识别流程...')
     if mode == 1:
         # generate_mask(x)
+        t1 = round(time.time() * 1000)
         img_data_gray, img_org = img_resize_gray(imgname)
+        t2 = round(time.time() * 1000)
+        print("================ cost1=", (t2 - t1))
+        t1 = t2
+
         result_dict = dict()
-        name_pic = find_name(img_data_gray, img_org)
-        # showimg(name_pic)
-        # print 'name'
-        result_dict['name'] = get_name(name_pic)
-        # print result_dict['name']
 
-        sex_pic = find_sex(img_data_gray, img_org)
-        # showimg(sex_pic)
-        # print 'sex'
-        result_dict['sex'] = get_sex(sex_pic)
-        # print result_dict['sex']
+        name_left_top, name_right_bottom = find_name(img_data_gray, img_org)
+        address_pic_left_top, address_pic_right_bottom = find_address(img_data_gray, img_org)
+        sex_pic_left_top, sex_pic_right_bottom = find_sex(img_data_gray, img_org)
+        nation_pic_left_top, nation_pic_right_bottom = find_nation(img_data_gray, img_org)
+        t2 = round(time.time() * 1000)
+        print("============== cost2=", (t2 - t1))
+        t1 = t2
+        print(name_left_top, name_right_bottom)
+        print("sex", sex_pic_left_top, sex_pic_right_bottom)
+        print(address_pic_left_top, address_pic_right_bottom)
 
-        nation_pic = find_nation(img_data_gray, img_org)
-        # showimg(nation_pic)
-        # print 'nation'
-        result_dict['nation'] = get_nation(nation_pic)
-        # print result_dict['nation']
+        x_arrays = []
+        x_arrays.append(name_left_top[0])
+        x_arrays.append(sex_pic_left_top[0])
+        x_arrays.append(address_pic_left_top[0])
 
-        address_pic = find_address(img_data_gray, img_org)
-        # showimg(address_pic)
-        # print 'address'
-        result_dict['address'] = get_address(address_pic)
-        # print result_dict['address']
+        x_arrays = sorted(x_arrays)
+        print(x_arrays, x_arrays[1])
+        name_right_bottom = (name_right_bottom[0] + (x_arrays[1] - name_left_top[0]), name_right_bottom[1])
+        name_left_top = (x_arrays[1], name_left_top[1])
 
-        idnum_pic = find_idnum(img_data_gray, img_org)
-        # showimg(idnum_pic)
-        # print 'idnum'
-        result_dict['idnum'], result_dict['birth'] = get_idnum_and_birth(idnum_pic)
-        # print result_dict['idnum']
+        # sex_pic_left_top = (x_arrays[1], sex_pic_left_top[1])
+        sex_pic_right_bottom = (sex_pic_right_bottom[0] + (x_arrays[1] - sex_pic_left_top[0]), sex_pic_right_bottom[1])
+        sex_pic_left_top = (x_arrays[1], sex_pic_left_top[1])
+
+        # address_pic_left_top = (x_arrays[1], address_pic_left_top[1])
+        address_pic_right_bottom = (
+            address_pic_right_bottom[0] + (x_arrays[1] - address_pic_left_top[0]), address_pic_right_bottom[1])
+        address_pic_left_top = (x_arrays[1], address_pic_left_top[1])
+        # 姓名、性别、地址 应该
+        print(name_left_top, name_right_bottom)
+        print("sex", sex_pic_left_top, sex_pic_right_bottom)
+        print(address_pic_left_top, address_pic_right_bottom)
+
+        print(nation_pic_left_top, nation_pic_right_bottom)
+
+        result_dict['name'] = get_name(get_mat(img_data_gray, img_org, name_left_top, name_right_bottom))
+        t2 = round(time.time() * 1000)
+        print("==============  name cost=", (t2 - t1))
+        t1 = t2
+        result_dict['address'] = get_address(
+            get_mat(img_data_gray, img_org, address_pic_left_top, address_pic_right_bottom))
+        t2 = round(time.time() * 1000)
+        print("==============  address cost=", (t2 - t1))
+        t1 = t2
+        result_dict['sex'] = get_sex(get_mat(img_data_gray, img_org, sex_pic_left_top, sex_pic_right_bottom))
+        id_left_top, id__right_bottom = find_idnum(img_data_gray, img_org)
+        t2 = round(time.time() * 1000)
+        print("==============  sex cost=", (t2 - t1))
+        t1 = t2
+        result_dict['idnum'], result_dict['birth'] = get_idnum_and_birth(
+            get_mat(img_data_gray, img_org, id_left_top, id__right_bottom))
+        t2 = round(time.time() * 1000)
+        print("==============  idnum cost=", (t2 - t1))
+        t1 = t2
+        result_dict['nation'] = get_nation(
+            get_mat(img_data_gray, img_org, nation_pic_left_top, nation_pic_right_bottom))
+        t2 = round(time.time() * 1000)
+        print("==============  cost3   =", (t2 - t1))
+        if debug:
+            showimg(img_data_gray)
+        return result_dict
+    # result_dict['name'] = get_name(name_pic)
+    # result_dict['sex'] = get_sex(sex_pic)
+    # result_dict['nation'] = get_nation(nation_pic)
+    # result_dict['address'] = get_address(address_pic)
+
+    # showimg(sex_pic)
+    # print 'sex'
+    # print result_dict['sex']
+
+    # showimg(nation_pic)
+    # print 'nation'
+    # print result_dict['nation']
+
+    # address_pic = find_address(img_data_gray, img_org)
+    # showimg(address_pic)
+    # print 'address'
+    # print result_dict['address']
+
+    # idnum_pic = find_idnum(img_data_gray, img_org)
+    # result_dict['idnum'], result_dict['birth'] = get_idnum_and_birth(idnum_pic)
     elif mode == 0:
         # generate_mask(x)
         img_data_gray, img_org = img_resize_gray(imgname)
@@ -74,6 +138,10 @@ def idcardocr(imgname, mode=1):
 
     # showimg(img_data_gray)
     return result_dict
+
+
+def print(*args):
+    pass
 
 
 def generate_mask(x):
@@ -108,11 +176,12 @@ def generate_mask(x):
 
 # 用于生成模板
 def img_resize_x(imggray):
-    # print 'dheight:%s' % dheight
+    # print ('dheight:%s' % dheight)
     crop = imggray
     size = crop.get().shape
-    dheight = int(size[0] * x)
-    dwidth = int(size[1] * x)
+    dheight = int(size[0] * x / rate)
+    dwidth = int(size[1] * x / rate)
+    # print("dheight=",dheight," dwidth=",dwidth," size=",size)
     crop = cv2.resize(src=crop, dsize=(dwidth, dheight), interpolation=cv2.INTER_CUBIC)
     return crop
 
@@ -137,53 +206,86 @@ def img_resize_gray(imgorg):
     height = size[0]
     width = size[1]
     # 参数是根据3840调的
-    height = int(height * 3840 * x / width)
-    # print height
-    crop = cv2.resize(src=crop, dsize=(int(3840 * x), height), interpolation=cv2.INTER_CUBIC)
+    height = int(height * global_width * x / width)
+    # print (height)
+    crop = cv2.resize(src=crop, dsize=(int(global_width * x), height), interpolation=cv2.INTER_CUBIC)
     return hist_equal(cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)), crop
 
 
-def find_name(crop_gray, crop_org):
-    template = cv2.UMat(cv2.imread('name_mask_%s.jpg' % pixel_x, 0))
-    # showimg(crop_org)
+template_mao = {}
+
+
+def get_mask(name):
+    if name in template_mao:
+        return template_mao[name]
+    template = cv2.UMat(cv2.imread(name, 0))
     w, h = cv2.UMat.get(template).shape[::-1]
+    template_mao[name] = {template, w, h}
+    return template, w, h
+    pass
+
+
+def find_name(crop_gray, crop_org):
+    # template = cv2.UMat(cv2.imread('name_mask_%s.jpg' % pixel_x, 0))
+    # # showimg(crop_org)
+    # w, h = cv2.UMat.get(template).shape[::-1]
+    template, w, h = get_mask('name_mask_%s.jpg' % pixel_x)
     res = cv2.matchTemplate(crop_gray, template, cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+
+    print(w, h, min_val, max_val, min_loc, max_loc)
     # print(max_loc)
-    top_left = (max_loc[0] + w, max_loc[1] - int(20 * x))
-    bottom_right = (top_left[0] + int(700 * x), top_left[1] + int(300 * x))
-    result = cv2.UMat.get(crop_org)[top_left[1] - 10:bottom_right[1], top_left[0] - 10:bottom_right[0]]
-    cv2.rectangle(crop_gray, top_left, bottom_right, 255, 2)
-    # showimg(result)
-    return cv2.UMat(result)
+    top_left = (max_loc[0] + int(w - 10 / rate), max_loc[1] - int(20 * x))
+    # top_left = (max_loc[0] + w, max_loc[1] - int(20 * x/ rate))
+    bottom_right = ((top_left[0] + int(700 / rate * x)), (top_left[1] + int(300 / rate * x)))
+    # result = cv2.UMat.get(crop_org)[top_left[1] - 10:bottom_right[1], top_left[0] - 10:bottom_right[0]]
+    # cv2.rectangle(crop_gray, top_left, bottom_right, mask_color, 2)
+    # print(top_left, bottom_right)
+    # # showimg(result)
+    # return cv2.UMat(result)
+    return top_left, bottom_right
 
 
 def find_sex(crop_gray, crop_org):
-    template = cv2.UMat(cv2.imread('sex_mask_%s.jpg' % pixel_x, 0))
-    # showimg(template)
-    w, h = cv2.UMat.get(template).shape[::-1]
+    t1 = round(time.time() * 1000)
+
+    # template = cv2.UMat(cv2.imread('sex_mask_%s.jpg' % pixel_x, 0))
+    # # showimg(template)
+    # w, h = cv2.UMat.get(template).shape[::-1]
+    template, w, h = get_mask('sex_mask_%s.jpg' % pixel_x)
     res = cv2.matchTemplate(crop_gray, template, cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
     top_left = (max_loc[0] + w, max_loc[1] - int(20 * x))
-    bottom_right = (top_left[0] + int(300 * x), top_left[1] + int(300 * x))
-    result = cv2.UMat.get(crop_org)[top_left[1] - 10:bottom_right[1], top_left[0] - 10:bottom_right[0]]
-    cv2.rectangle(crop_gray, top_left, bottom_right, 255, 2)
-    # showimg(crop_gray)
-    return cv2.UMat(result)
+    bottom_right = (int(top_left[0] + int(300 * x) / rate), int(top_left[1] + int(300 * x) / rate))
+    # result = cv2.UMat.get(crop_org)[top_left[1] - 10:bottom_right[1], top_left[0] - 10:bottom_right[0]]
+    # cv2.rectangle(crop_gray, top_left, bottom_right, mask_color, 2)
+    # print(top_left, bottom_right)
+    # # showimg(crop_gray)
+    # # showimg(result)
+    # return cv2.UMat(result)
+    t2 = round(time.time() * 1000)
+    print("find sex cost=", (t2 - t1))
+    return top_left, bottom_right
 
 
 def find_nation(crop_gray, crop_org):
-    template = cv2.UMat(cv2.imread('nation_mask_%s.jpg' % pixel_x, 0))
-    # showimg(template)
-    w, h = cv2.UMat.get(template).shape[::-1]
+    # template = cv2.UMat(cv2.imread('nation_mask_%s.jpg' % pixel_x, 0))
+    #
+    # # showimg(template)
+    # w, h = cv2.UMat.get(template).shape[::-1]
+
+    template, w, h = get_mask('nation_mask_%s.jpg' % pixel_x)
+
     res = cv2.matchTemplate(crop_gray, template, cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
     top_left = (max_loc[0] + w - int(20 * x), max_loc[1] - int(20 * x))
-    bottom_right = (top_left[0] + int(500 * x), top_left[1] + int(300 * x))
-    result = cv2.UMat.get(crop_org)[top_left[1] - 10:bottom_right[1], top_left[0] - 10:bottom_right[0]]
-    cv2.rectangle(crop_gray, top_left, bottom_right, 255, 2)
-    # showimg(crop_gray)
-    return cv2.UMat(result)
+    bottom_right = (top_left[0] + int(500 * x / rate), top_left[1] + int(300 * x / rate))
+    # result = cv2.UMat.get(crop_org)[top_left[1] - 10:bottom_right[1], top_left[0] - 10:bottom_right[0]]
+    # cv2.rectangle(crop_gray, top_left, bottom_right, mask_color, 2)
+    # print(top_left, bottom_right)
+    # # showimg(crop_gray)
+    # return cv2.UMat(result)
+    return top_left, bottom_right
 
 
 # def find_birth(crop_gray, crop_org):
@@ -198,7 +300,7 @@ def find_nation(crop_gray, crop_org):
 #         # 提取result需要在rectangle之前
 #         date_org = cv2.UMat.get(crop_org)[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
 #         date = cv2.cvtColor(date_org, cv2.COLOR_BGR2GRAY)
-#         cv2.rectangle(crop_gray, top_left, bottom_right, 255, 2)
+#         cv2.rectangle(crop_gray, top_left, bottom_right, mask_color, 2)
 #         # cv2.imwrite('date.png',date)
 #
 #         # 提取年份
@@ -209,7 +311,7 @@ def find_nation(crop_gray, crop_org):
 #         top_left = (0, 0)
 #         year = date_org[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
 #         # cv2.imwrite('year.png',year)
-#         cv2.rectangle(crop_gray, top_left, bottom_right, 255, 2)
+#         cv2.rectangle(crop_gray, top_left, bottom_right, mask_color, 2)
 #
 #         # 提取月
 #         template = cv2.UMat(cv2.imread('month_mask_%s.jpg'%pixel_x, 0))
@@ -219,7 +321,7 @@ def find_nation(crop_gray, crop_org):
 #         top_left = (max_loc[0] - int(220*x), 0)
 #         month = date_org[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
 #         # cv2.imwrite('month.png',month)
-#         cv2.rectangle(crop_gray, top_left, bottom_right, 255, 2)
+#         cv2.rectangle(crop_gray, top_left, bottom_right, mask_color, 2)
 #
 #         # 提取日
 #         template = cv2.UMat(cv2.imread('day_mask_%s.jpg'%pixel_x, 0))
@@ -229,40 +331,51 @@ def find_nation(crop_gray, crop_org):
 #         top_left = (max_loc[0] - int(220*x), 0)
 #         day = date_org[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
 #         # cv2.imwrite('day.png',day)
-#         cv2.rectangle(crop_gray, top_left, bottom_right, 255, 2)
+#         cv2.rectangle(crop_gray, top_left, bottom_right, mask_color, 2)
 #         showimg(crop_gray)
 #         return cv2.UMat(year), cv2.UMat(month), cv2.UMat(day)
 
 def find_address(crop_gray, crop_org):
-    template = cv2.UMat(cv2.imread('address_mask_%s.jpg' % pixel_x, 0))
-    # showimg(template)
-    # showimg(crop_gray)
-    w, h = cv2.UMat.get(template).shape[::-1]
+    # template = cv2.UMat(cv2.imread('address_mask_%s.jpg' % pixel_x, 0))
+    # # showimg(template)
+    # # showimg(crop_gray)
+    # w, h = cv2.UMat.get(template).shape[::-1]
+    template, w, h = get_mask('address_mask_%s.jpg' % pixel_x)
     # t1 = round(time.time()*1000)
     res = cv2.matchTemplate(crop_gray, template, cv2.TM_CCOEFF_NORMED)
     # t2 = round(time.time()*1000)
     # print 'time:%s'%(t2-t1)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
     top_left = (max_loc[0] + w, max_loc[1] - int(20 * x))
-    bottom_right = (top_left[0] + int(1700 * x), top_left[1] + int(550 * x))
-    result = cv2.UMat.get(crop_org)[top_left[1] - 10:bottom_right[1], top_left[0] - 10:bottom_right[0]]
-    cv2.rectangle(crop_gray, top_left, bottom_right, 255, 2)
+    bottom_right = (top_left[0] + int(1760 * x / rate), top_left[1] + int(544 * x / rate))
+    # result = cv2.UMat.get(crop_org)[top_left[1] - 10:bottom_right[1], top_left[0] - 10:bottom_right[0]]
+    # cv2.rectangle(crop_gray, top_left, bottom_right, mask_color, 2)
+    # print(top_left, bottom_right)
     # showimg(crop_gray)
-    return cv2.UMat(result)
+    # return cv2.UMat(result)
+    return top_left, bottom_right
 
 
 def find_idnum(crop_gray, crop_org):
-    template = cv2.UMat(cv2.imread('idnum_mask_%s.jpg' % pixel_x, 0))
-    # showimg(template)
-    # showimg(crop_gray)
-    w, h = cv2.UMat.get(template).shape[::-1]
+    # template = cv2.UMat(cv2.imread('idnum_mask_%s.jpg' % pixel_x, 0))
+    # # showimg(template)
+    # # showimg(crop_gray)
+    # w, h = cv2.UMat.get(template).shape[::-1]
+    template, w, h = get_mask('idnum_mask_%s.jpg' % pixel_x)
     res = cv2.matchTemplate(crop_gray, template, cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
     top_left = (max_loc[0] + w, max_loc[1] - int(20 * x))
     bottom_right = (top_left[0] + int(2300 * x), top_left[1] + int(300 * x))
-    result = cv2.UMat.get(crop_org)[top_left[1] - 10:bottom_right[1], top_left[0] - 10:bottom_right[0]]
-    cv2.rectangle(crop_gray, top_left, bottom_right, 255, 2)
+    # result = cv2.UMat.get(crop_org)[top_left[1] - 10:bottom_right[1], top_left[0] - 10:bottom_right[0]]
+    # cv2.rectangle(crop_gray, top_left, bottom_right, mask_color, 2)
     # showimg(crop_gray)
+    # return cv2.UMat(result)
+    return top_left, bottom_right
+
+
+def get_mat(crop_gray, crop_org, top_left, bottom_right):
+    result = cv2.UMat.get(crop_org)[top_left[1] - 10:bottom_right[1], top_left[0] - 10:bottom_right[0]]
+    cv2.rectangle(crop_gray, top_left, bottom_right, mask_color, 2)
     return cv2.UMat(result)
 
 
@@ -322,8 +435,8 @@ def get_sex(img):
     red = img_resize(red, 150)
     # cv2.imwrite('sex.png', red)
     # img = Image.fromarray(cv2.UMat.get(red).astype('uint8'))
-    # return get_result_fix_length(red, 1, 'sex', '-psm 10')
-    return get_result_fix_length(red, 1, 'chi_sim', '--psm 10')
+    return get_result_fix_length(red, 1, 'sex', '--psm 10').replace("\t", "").replace("\f", "")
+    # return get_result_fix_length(red, 1, 'chi_sim', '--psm 10')
     # return pytesseract.image_to_string(img, lang='sex', config='-psm 10').replace(" ","")
 
 
@@ -336,8 +449,8 @@ def get_nation(img):
     red = img_resize(red, 150)
     # cv2.imwrite('nation.png', red)
     # img = Image.fromarray(cv2.UMat.get(red).astype('uint8'))
-    # return get_result_fix_length(red, 1, 'nation', '-psm 10')
-    return get_result_fix_length(red, 1, 'chi_sim', '--psm 10')
+    return get_result_fix_length(red, 1, 'nation', '--psm 10').replace("\t", "").replace("\f", "")
+    # return get_result_fix_length(red, 1, 'chi_sim', '--psm 10')
     # return pytesseract.image_to_string(img, lang='nation', config='-psm 13').replace(" ","")
 
 
@@ -462,10 +575,10 @@ def get_result_vary_length(red, langset, org_img, custom_config=''):
     # cv2.fastNlMeansDenoising(red, red, 4, 7, 35)
     rec, red = cv2.threshold(red, 127, 255, cv2.THRESH_BINARY_INV)
     image, contours, hierarchy = cv2.findContours(red, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    # print(len(contours))
+    print(len(contours))
     # 描边一次可以减少噪点
     cv2.drawContours(red, contours, -1, (255, 255, 255), 1)
-    color_img = cv2.cvtColor(red, cv2.COLOR_GRAY2BGR)
+    # color_img = cv2.cvtColor(red, cv2.COLOR_GRAY2BGR)
     numset_contours = []
     height_list = []
     width_list = []
@@ -564,9 +677,15 @@ def hist_equal(img):
 
 
 if __name__ == "__main__":
+    t1 = round(time.time() * 1000)
+
     idocr = idcardocr(cv2.UMat(cv2.imread('/Users/denghaizhu/Downloads/name1.jpg')))
+    # idocr = idcardocr(cv2.UMat(cv2.imread('/Users/denghaizhu/Downloads/name2.png')))
     # idocr = idcardocr(cv2.UMat(cv2.imread('/Users/denghaizhu/Downloads/xiaobao.jpg')))
+    # idocr = idcardocr(cv2.UMat(cv2.imread('/Users/denghaizhu/Downloads/haizhu.png')))
     print(idocr)
+    t2 = round(time.time() * 1000)
+    print("耗时：", (t2 - t1))
     # for i in range(15):
     #     idocr = idcardocr(cv2.UMat(cv2.imread('testimages/%s.jpg'%(i+1))))
     #     print(idocr['idnum'])
