@@ -39,7 +39,6 @@ class idcardocr:
             t1 = t2
 
             # result_dict = dict()
-
             name_left_top, name_right_bottom = self.find_name(img_data_gray, img_org)
             address_pic_left_top, address_pic_right_bottom = self.find_address(img_data_gray, img_org)
             sex_pic_left_top, sex_pic_right_bottom = self.find_sex(img_data_gray, img_org)
@@ -47,16 +46,15 @@ class idcardocr:
             t2 = round(time.time() * 1000)
             print("============== cost2=", (t2 - t1))
             t1 = t2
-            # print(name_left_top, name_right_bottom)
-            # print("sex", sex_pic_left_top, sex_pic_right_bottom)
-            # print(address_pic_left_top, address_pic_right_bottom)
 
+            # 因为身份证信息是固定的，这里通过姓名、性别、地址位置对比来排查可能失败位置错误
             x_arrays = []
             x_arrays.append(name_left_top[0])
             x_arrays.append(sex_pic_left_top[0])
             x_arrays.append(address_pic_left_top[0])
-
             x_arrays = sorted(x_arrays)
+
+
             # print(x_arrays, x_arrays[1])
             name_right_bottom = (name_right_bottom[0] + (x_arrays[1] - name_left_top[0]), name_right_bottom[1])
             name_left_top = (x_arrays[1], name_left_top[1])

@@ -14,6 +14,11 @@ from idcardocr import idcardocr
 
 
 def process(img_name, use_find_card=False):
+    """
+    :param img_name:
+    :param use_find_card: 是否开启预选
+    :return:
+    """
     try:
         if use_find_card:
             idfind = findidcard()
