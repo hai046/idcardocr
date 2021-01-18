@@ -1,12 +1,16 @@
 
-# 优化
+# 优化和变更
 - 优化了template识别：比较姓名、性别、出生日期的坐标，优化掉肯能有问题的坐标
 - 添加了多线程失败，MacBook Pro (13-inch, 2016, Four Thunderbolt 3 Ports 上性能由原来的7s到2s内
+- 变更了cv2的Umat返回，因为cv2.UMat 不能dump，这里是通过cv2.UMat(image).get()来传递数据的
+- 优化了目录结构【我强迫症】
+- 接口变更为`/api/v1/ocr`
+
 
 其他：
 
-接口变更为`/api/v1/ocr`
 
+fork git@github.com:Raymondhhh90/idcardocr.git
 
 # 第二代身份证信息识别
 可识别身份证上所有信息：姓名，性别，民族，出生日期，住址，身份证号码。提供Docker镜像部署方式
