@@ -1,7 +1,7 @@
 
 # 优化和变更
 - 优化了template识别：比较姓名、性别、出生日期的坐标，优化掉肯能有问题的坐标
-- 添加了多线程失败，MacBook Pro (13-inch, 2016, Four Thunderbolt 3 Ports 上性能由原来的7s到2s内
+- 添加了多线程失败，MacBook Pro (13-inch, 2016)上性能由原来的7s到2s内
 - 变更了cv2的Umat返回，因为cv2.UMat 不能dump，这里是通过cv2.UMat(image).get()来传递数据的
 - 优化了目录结构【我强迫症】
 - 接口变更为`/api/v1/ocr`
@@ -39,7 +39,7 @@ fork git@github.com:Raymondhhh90/idcardocr.git
   --header 'content-type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW' \
   --form 'pic=@./testimages/3.jpg'`  <br><br>
 >>> 使用Postman：  <br>
->>> ![avatar](postman.jpg) <br>
+>>> ![avatar](images/postman.jpg) <br>
 
 # 性能<br>
 > 平台： I5 8259u + 16g macOS 13.14 关闭OpenCL<br>
