@@ -3,22 +3,24 @@ import cgi
 import json
 import os
 import socketserver
+import time
 import uuid
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import cv2
-import time
 
-import findidcard
-import idcardocr
+from findidcard import findidcard
+from idcardocr import idcardocr
 
 
 def process(img_name):
     try:
         idfind = findidcard.findidcard()
         idcard_img = idfind.find(img_name)
+        # idcard_img = cv2.UMat(cv2.imread(img_name))
         result_dict = dict()
-        result_dict["data"] = idcardocr.idcardocr(idcard_img)
+        idocr = idcardocr()
+        result_dict["data"] = idocr.ocr(idcard_img)
         result_dict['code'] = 0
     except Exception as e:
         result_dict = {'code': 1, 'message': "%s" % e}
