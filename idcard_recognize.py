@@ -13,15 +13,17 @@ from findidcard import findidcard
 from idcardocr import idcardocr
 
 
-def process(img_name):
+def process(img_name, use_find_card=False):
     try:
-        idfind = findidcard()
-        idcard_img = idfind.find(img_name)
-        # idcard_img = cv2.UMat(cv2.imread(img_name))
+        if use_find_card:
+            idfind = findidcard()
+            idcard_img = idfind.find(img_name)
+        else:
+            idcard_img = cv2.UMat(cv2.imread(img_name))
         result_dict = dict()
         idocr = idcardocr()
         result_dict["data"] = idocr.ocr(idcard_img)
-        result_dict['code'] = 0
+        result_dict['code'] = 200
     except Exception as e:
         result_dict = {'code': 1, 'message': "%s" % e}
         print(e)
@@ -47,7 +49,13 @@ class S(BaseHTTPRequestHandler):
         self._set_headers()
 
     def do_POST(self):
-        # content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
+        if not self.path.startswith('/api/v1/ocr'):
+            result = {"code": 404, "message": "404"}
+            self._set_headers()
+            self.end_headers()
+            self.wfile.write(json.dumps(result).encode('utf-8'))
+            return
+            # content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
         # post_data = self.rfile.read(content_length) # <--- Gets the data itself
         t1 = round(time.time() * 1000)
         ctype, pdict = cgi.parse_header(self.headers['content-type'])
@@ -61,7 +69,12 @@ class S(BaseHTTPRequestHandler):
         fo.write(multipart_data.get('pic')[0])
         fo.close()
         path = "tmp/%s.jpg" % filename
-        result = process("tmp/%s.jpg" % filename)
+        result = process("tmp/%s.jpg" % filename, use_find_card=False)
+        if result['code'] != 200 or ('data' in result and len(result['data']) < 5):
+            print("没有识别到信息，重新识别")
+            result = process("tmp/%s.jpg" % filename, use_find_card=True)
+            result['findCard'] = True
+
         t2 = round(time.time() * 1000)
         result['costTime'] = (t2 - t1)
         # print result

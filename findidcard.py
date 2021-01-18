@@ -90,6 +90,6 @@ class findidcard:
 
 if __name__ == "__main__":
     idfind = findidcard()
-    result = idfind.find('/Users/denghaizhu/Downloads/haizhu.png', )
+    result = idfind.find('/Users/denghaizhu/Downloads/name3.png', )
     print(result)
-    # idfind.showimg(result)
+    idfind.showimg(result)

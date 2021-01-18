@@ -8,6 +8,8 @@ import numpy as np
 import pytesseract
 from PIL import Image
 
+from findidcard import findidcard
+
 rate = 1.0
 global_height = 1280.00 / rate
 global_width = 3840.00 / rate
@@ -95,12 +97,31 @@ class idcardocr:
             p.close()
             p.join()
             result_dict = dict()
-            result_dict["name"] = name.get()
-            result_dict["address"] = address.get()
-            result_dict["sex"] = sex.get()
-            result_dict["nation"] = nation.get()
-            result_dict["idnum"] = idnum.get()
-            result_dict["birth"] = result_dict["idnum"][6:14]
+            try:
+                result_dict["name"] = name.get()
+            except Exception as e:
+                print("name err", e)
+
+            try:
+                result_dict["address"] = address.get()
+            except Exception as e:
+                print("address err", e)
+
+            try:
+                result_dict["sex"] = sex.get()
+            except Exception as e:
+                print("sex err", e)
+
+            try:
+                result_dict["nation"] = nation.get()
+            except Exception as e:
+                print("nation err", e)
+
+            try:
+                result_dict["idnum"] = idnum.get()
+                result_dict["birth"] = result_dict["idnum"][6:14]
+            except Exception as e:
+                print("idnum err", e)
             t2 = round(time.time() * 1000)
             print("==============  pool   =", (t2 - t1))
 
@@ -202,8 +223,8 @@ class idcardocr:
     template_mao = {}
 
     def get_mask(self, name):
-        if name in self.template_mao:
-            return self.template_mao[name]
+        # if name in self.template_mao:
+        #     return self.template_mao[name]
         template = cv2.UMat(cv2.imread(name, 0))
         w, h = cv2.UMat.get(template).shape[::-1]
         self.template_mao[name] = {template, w, h}
@@ -552,7 +573,7 @@ class idcardocr:
                                                          lang=langset, config=custom_config)
         # print(new_r)
         # cv2.imwrite('fixlengthred.png', cv2.UMat.get(red_org)[y-10:y + h +10 , x-10:x + w + 10])
-        print(result_string)
+        # print(result_string)
         return result_string
 
     def get_result_vary_length(self, red, langset, org_img, custom_config=''):
@@ -664,7 +685,10 @@ if __name__ == "__main__":
     # debug = True
     t1 = round(time.time() * 1000)
     id = idcardocr()
-    idocr = id.ocr(cv2.UMat(cv2.imread('/Users/denghaizhu/Downloads/name1.jpg')))
+    idfind = findidcard()
+    path = '/Users/denghaizhu/Downloads/name3.png'
+    idcard_img = idfind.find(path)
+    idocr = id.ocr(idcard_img)
     # idocr = id.jpg(cv2.UMat(cv2.imread('/Users/denghaizhu/Downloads/name2.png')))
     # idocr = idcardocr(cv2.UMat(cv2.imread('/Users/denghaizhu/Downloads/xiaobao.jpg')))
     # idocr = idcardocr(cv2.UMat(cv2.imread('/Users/denghaizhu/Downloads/haizhu.png')))
