@@ -15,7 +15,7 @@ from idcardocr import idcardocr
 
 def process(img_name):
     try:
-        idfind = findidcard.findidcard()
+        idfind = findidcard()
         idcard_img = idfind.find(img_name)
         # idcard_img = cv2.UMat(cv2.imread(img_name))
         result_dict = dict()
