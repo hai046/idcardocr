@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import re
 import time
 from multiprocessing import Pool
@@ -53,7 +54,6 @@ class idcardocr:
             x_arrays.append(sex_pic_left_top[0])
             x_arrays.append(address_pic_left_top[0])
             x_arrays = sorted(x_arrays)
-
 
             # print(x_arrays, x_arrays[1])
             name_right_bottom = (name_right_bottom[0] + (x_arrays[1] - name_left_top[0]), name_right_bottom[1])
@@ -155,15 +155,15 @@ class idcardocr:
     #     pass
 
     def generate_mask(self, x):
-        name_mask_pic = cv2.UMat(cv2.imread('name_mask.jpg'))
-        sex_mask_pic = cv2.UMat(cv2.imread('sex_mask.jpg'))
-        nation_mask_pic = cv2.UMat(cv2.imread('nation_mask.jpg'))
-        birth_mask_pic = cv2.UMat(cv2.imread('birth_mask.jpg'))
-        year_mask_pic = cv2.UMat(cv2.imread('year_mask.jpg'))
-        month_mask_pic = cv2.UMat(cv2.imread('month_mask.jpg'))
-        day_mask_pic = cv2.UMat(cv2.imread('day_mask.jpg'))
-        address_mask_pic = cv2.UMat(cv2.imread('address_mask.jpg'))
-        idnum_mask_pic = cv2.UMat(cv2.imread('idnum_mask.jpg'))
+        name_mask_pic = cv2.UMat(cv2.imread('images/name_mask.jpg'))
+        sex_mask_pic = cv2.UMat(cv2.imread('images/sex_mask.jpg'))
+        nation_mask_pic = cv2.UMat(cv2.imread('images/nation_mask.jpg'))
+        birth_mask_pic = cv2.UMat(cv2.imread('images/birth_mask.jpg'))
+        year_mask_pic = cv2.UMat(cv2.imread('images/year_mask.jpg'))
+        month_mask_pic = cv2.UMat(cv2.imread('images/month_mask.jpg'))
+        day_mask_pic = cv2.UMat(cv2.imread('images/day_mask.jpg'))
+        address_mask_pic = cv2.UMat(cv2.imread('images/address_mask.jpg'))
+        idnum_mask_pic = cv2.UMat(cv2.imread('images/idnum_mask.jpg'))
         name_mask_pic = self.img_resize_x(name_mask_pic)
         sex_mask_pic = self.img_resize_x(sex_mask_pic)
         nation_mask_pic = self.img_resize_x(nation_mask_pic)
@@ -173,15 +173,15 @@ class idcardocr:
         day_mask_pic = self.img_resize_x(day_mask_pic)
         address_mask_pic = self.img_resize_x(address_mask_pic)
         idnum_mask_pic = self.img_resize_x(idnum_mask_pic)
-        cv2.imwrite('name_mask_%s.jpg' % pixel_x, name_mask_pic)
-        cv2.imwrite('sex_mask_%s.jpg' % pixel_x, sex_mask_pic)
-        cv2.imwrite('nation_mask_%s.jpg' % pixel_x, nation_mask_pic)
-        cv2.imwrite('birth_mask_%s.jpg' % pixel_x, birth_mask_pic)
-        cv2.imwrite('year_mask_%s.jpg' % pixel_x, year_mask_pic)
-        cv2.imwrite('month_mask_%s.jpg' % pixel_x, month_mask_pic)
-        cv2.imwrite('day_mask_%s.jpg' % pixel_x, day_mask_pic)
-        cv2.imwrite('address_mask_%s.jpg' % pixel_x, address_mask_pic)
-        cv2.imwrite('idnum_mask_%s.jpg' % pixel_x, idnum_mask_pic)
+        cv2.imwrite('images/name_mask_%s.jpg' % pixel_x, name_mask_pic)
+        cv2.imwrite('images/sex_mask_%s.jpg' % pixel_x, sex_mask_pic)
+        cv2.imwrite('images/nation_mask_%s.jpg' % pixel_x, nation_mask_pic)
+        cv2.imwrite('images/birth_mask_%s.jpg' % pixel_x, birth_mask_pic)
+        cv2.imwrite('images/year_mask_%s.jpg' % pixel_x, year_mask_pic)
+        cv2.imwrite('images/month_mask_%s.jpg' % pixel_x, month_mask_pic)
+        cv2.imwrite('images/day_mask_%s.jpg' % pixel_x, day_mask_pic)
+        cv2.imwrite('images/address_mask_%s.jpg' % pixel_x, address_mask_pic)
+        cv2.imwrite('images/idnum_mask_%s.jpg' % pixel_x, idnum_mask_pic)
 
     # 用于生成模板
     def img_resize_x(self, imggray):
@@ -221,6 +221,7 @@ class idcardocr:
     template_mao = {}
 
     def get_mask(self, name):
+        name = os.path.join("images", name)
         # if name in self.template_mao:
         #     return self.template_mao[name]
         template = cv2.UMat(cv2.imread(name, 0))
@@ -687,9 +688,6 @@ if __name__ == "__main__":
     path = '/Users/denghaizhu/Downloads/name3.png'
     idcard_img = idfind.find(path)
     idocr = id.ocr(idcard_img)
-    # idocr = id.jpg(cv2.UMat(cv2.imread('/Users/denghaizhu/Downloads/name2.png')))
-    # idocr = idcardocr(cv2.UMat(cv2.imread('/Users/denghaizhu/Downloads/xiaobao.jpg')))
-    # idocr = idcardocr(cv2.UMat(cv2.imread('/Users/denghaizhu/Downloads/haizhu.png')))
     print(idocr)
     t2 = round(time.time() * 1000)
     print("耗时：", (t2 - t1))

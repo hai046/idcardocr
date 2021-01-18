@@ -12,7 +12,7 @@ class findidcard:
     # img1为身份证模板, img2为需要识别的图像
     def find(self, img2_name):
         print(u'进入身份证模版匹配流程...')
-        img1_name = 'idcard_mask.jpg'
+        img1_name = 'images/idcard_mask.jpg'
         MIN_MATCH_COUNT = 10
         img1 = cv2.UMat(cv2.imread(img1_name, 0))  # queryImage in Gray
         img1 = self.img_resize(img1, 640)
